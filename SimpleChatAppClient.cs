@@ -32,18 +32,27 @@ public class SimpleChatAppClient {
     }
     
     /// <summary>
-    /// Attempt the communicate with the server.
+    /// Attempt to communicate with the server.
     /// </summary>
+    /// <param name="exception">The exception that was thrown attempting to communicate.</param>
     /// <returns>Whether the communication was successful, if false you should try a different IP.</returns>
-    public bool TestConnection() {
+    public bool TestConnection(out Exception? exception) {
         try {
             Requests.SendHttpRequest("GET", IP);
         }
-        catch (Exception) {
+        catch (Exception e) {
+            exception = e;
             return false;
         }
+        exception = null;
         return true;
     }
+    
+    /// <summary>
+    /// Attempt to communicate with the server.
+    /// </summary>
+    /// <returns>Whether the communication was successful, if false you should try a different IP.</returns>
+    public bool TestConnection() => TestConnection(out _);
     
     /// <summary>
     /// Send a message to the connected channel.
