@@ -1,0 +1,28 @@
+using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace SimpleChatAppLibrary; 
+
+public class Requests {
+
+    public static string SendHttpRequest(string requestType, string url, string? jsonData) {
+        HttpClient client = new HttpClient();
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        HttpResponseMessage? response = requestType switch {
+            "POST" => client.PostAsync(url, new StringContent(jsonData, System.Text.Encoding.UTF8, "application/json"))
+                .Result,
+            "GET" => client.GetAsync(url).Result,
+            _ => throw new ArgumentException("Invalid request type")
+        };
+        string respText = response.Content.ReadAsStringAsync().Result;
+        return respText;
+    }
+
+    public static string SendHttpRequest(string requestType, string url, Dictionary<string, object>? jsonData) 
+        => SendHttpRequest(requestType, url, JsonSerializer.Serialize(jsonData));
+    
+    public static string SendHttpRequest(string requestType, string url) 
+        => SendHttpRequest(requestType, url, string.Empty);
+
+}
