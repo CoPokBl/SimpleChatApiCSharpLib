@@ -84,6 +84,11 @@ public class SimpleChatAppClient {
         return messages.Reverse();
     }
 
+    /// <summary>
+    /// Gets a list of online users in the connected channel.
+    /// </summary>
+    /// <returns>The requested list of users</returns>
+    /// <exception cref="SimpleChatAppException">Will be thrown if the server responds with a null response.</exception>
     public IEnumerable<string> GetOnlineUsers() {
       string response = Requests.SendHttpRequest("GET", $"{IP}/messages/{Channel}/online");
       string[]? online = JsonSerializer.Deserialize<string[]>(response);
