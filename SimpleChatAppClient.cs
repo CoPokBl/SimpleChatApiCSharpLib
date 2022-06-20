@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace SimpleChatAppLibrary; 
+namespace SimpleChatAppLibrary;
 
 public class SimpleChatAppClient {
 
@@ -8,7 +8,7 @@ public class SimpleChatAppClient {
     /// Current username.
     /// </summary>
     public string Name { get; }
-    
+
     /// <summary>
     /// The IP that requests will get sent to.
     /// </summary>
@@ -30,7 +30,7 @@ public class SimpleChatAppClient {
         IP = ip;
         Channel = channel;
     }
-    
+
     /// <summary>
     /// Attempt to communicate with the server.
     /// </summary>
@@ -47,13 +47,13 @@ public class SimpleChatAppClient {
         exception = null;
         return true;
     }
-    
+
     /// <summary>
     /// Attempt to communicate with the server.
     /// </summary>
     /// <returns>Whether the communication was successful, if false you should try a different IP.</returns>
     public bool TestConnection() => TestConnection(out _);
-    
+
     /// <summary>
     /// Send a message to the connected channel.
     /// </summary>
@@ -64,7 +64,7 @@ public class SimpleChatAppClient {
             { "creatorName", Name }
         });
     }
-    
+
     /// <summary>
     /// Gets the specified number of messages from the connected channel.
     /// </summary>
@@ -74,10 +74,17 @@ public class SimpleChatAppClient {
     /// <returns>A list of the requested messages</returns>
     /// <exception cref="SimpleChatAppException">Will be thrown if the server responds with a null response.</exception>
     public IEnumerable<SimpleChatAppMessage> GetMessages(int amount = 10, int offset = 0) {
-        string response = Requests.SendHttpRequest("GET", $"{IP}/messages/{Channel}?limit={amount}&offset={offset}");
+        string response = Requests.SendHttpRequest("GET", $"{IP}/messages/{Channel}?limit={amount}&offset={offset}&name={Name}");
         SimpleChatAppMessage[]? messages = JsonSerializer.Deserialize<SimpleChatAppMessage[]>(response);
         if (messages == null) throw new SimpleChatAppException("Failed to get messages (null response)");
         return messages.Reverse();
+    }
+
+    public IEnumerable<string> GetOnlineUsers() {
+      string response = Requests.SendHttpRequest("GET", $"{IP}/messages/{Channel}/online");
+      string[]? online = JsonSerializer.Deserialize<string[]>(response);
+      if (online == null) throw new SimpleChatAppException("Failed to get online (null response)");
+      return online;
     }
 
 }
