@@ -73,8 +73,12 @@ public class SimpleChatAppClient {
     /// For example a value of 5 would skip 5 messages and get the next amount that was specified.</param>
     /// <returns>A list of the requested messages</returns>
     /// <exception cref="SimpleChatAppException">Will be thrown if the server responds with a null response.</exception>
-    public IEnumerable<SimpleChatAppMessage> GetMessages(int amount = 10, int offset = 0) {
-        string response = Requests.SendHttpRequest("GET", $"{IP}/messages/{Channel}?limit={amount}&offset={offset}&name={Name}");
+    public IEnumerable<SimpleChatAppMessage> GetMessages(int amount = 10, int offset = 0, bool appearOnline = true) {
+        string url = $"{IP}/messages/{Channel}?limit={amount}&offset={offset}";
+        if (appearOnline) {
+          url += $"&name={Name}";
+        }
+        string response = Requests.SendHttpRequest("GET", url);
         SimpleChatAppMessage[]? messages = JsonSerializer.Deserialize<SimpleChatAppMessage[]>(response);
         if (messages == null) throw new SimpleChatAppException("Failed to get messages (null response)");
         return messages.Reverse();
