@@ -23,6 +23,16 @@ public class SimpleChatAppMessage {
     public long createdAt { get; set; }
     
     /// <summary>
+    /// The signature of the message.
+    /// </summary>
+    public string signature { get; set; }
+    
+    /// <summary>
+    /// The public key of the sender.
+    /// </summary>
+    public string publicKey { get; set; }
+    
+    /// <summary>
     /// Gets the time the message was sent in a DateTime object (UTC timezone).
     /// </summary>
     /// <returns>The DateTime object representing when the message was sent.</returns>
@@ -33,4 +43,10 @@ public class SimpleChatAppMessage {
     /// </summary>
     /// <returns>The DateTime object representing when the message was sent.</returns>
     public DateTime GetCreatedTimeLocal(DateTime time) => DateTime.FromBinary(createdAt).ToLocalTime();
+    
+    /// <summary>
+    /// Gets the message ID as a Guid object
+    /// </summary>
+    /// <returns>The Guid Object</returns>
+    public Guid GetMessageId() => Guid.Parse(messageId);
 }
