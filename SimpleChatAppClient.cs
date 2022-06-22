@@ -27,13 +27,25 @@ public class SimpleChatAppClient {
     /// </summary>
     public string Channel { get; }
     
+    /// <summary>
+    /// Object that allows control over trusted users.
+    /// </summary>
     public TrustedChatUsers TrustedUsers { get; }
 
+    /// <summary>
+    /// Application preferences.
+    /// </summary>
     internal SimpleChatLibPrefs Prefs { get; }
 
+    /// <summary>
+    /// The client's private signing key.
+    /// </summary>
     private string privateKey { get; }
     
-    private string publicKey { get; }
+    /// <summary>
+    /// The client's public signing key.
+    /// </summary>
+    public string publicKey { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SimpleChatAppClient"/> class.
@@ -49,8 +61,11 @@ public class SimpleChatAppClient {
         Prefs = new SimpleChatLibPrefs();
         
         // Load trusted users from file.
-        Dictionary<string, string> trust = JsonSerializer.Deserialize<Dictionary<string, string>>(
+        List<KeyValuePair<string, string>>? trust = JsonSerializer.Deserialize<List<KeyValuePair<string, string>>>(
             Prefs.GetString("trusted_users", "{}"));
+        if (trust == null) {
+            throw new Exception("Invalid trusted users value in config");
+        }
         TrustedUsers.TrustedUsers = trust;
         
         // Try load private key from file.
@@ -58,17 +73,17 @@ public class SimpleChatAppClient {
 
         // If private key is not found, generate a new one.
         if (privateKeyG == null) {
-            DSACryptoServiceProvider MySigner = new();
-            privateKey = MySigner.ToXmlString(true);
+            DSACryptoServiceProvider signer = new();
+            privateKey = signer.ToXmlString(true);
             Prefs.SetString("private_key", privateKey);
-            publicKey = MySigner.ToXmlString(false);
+            publicKey = signer.ToXmlString(false);
             Prefs.Save();
         }
         else {
-            DSACryptoServiceProvider MySigner = new DSACryptoServiceProvider();
-            MySigner.FromXmlString(privateKeyG);
+            DSACryptoServiceProvider signer = new();
+            signer.FromXmlString(privateKeyG);
             privateKey = privateKeyG;
-            publicKey = MySigner.ToXmlString(false);
+            publicKey = signer.ToXmlString(false);
         }
     }
 
