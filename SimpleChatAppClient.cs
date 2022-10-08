@@ -20,6 +20,7 @@ public class SimpleChatAppClient {
     /// The IP that requests will get sent to. (Deprecated)
     /// </summary>
     [Obsolete("Use Ip instead.")]
+    // ReSharper disable once InconsistentNaming
     public string IP => Ip;
 
     /// <summary>
@@ -48,21 +49,28 @@ public class SimpleChatAppClient {
     public string publicKey { get; }
 
     /// <summary>
+    /// The password to use when communicating with the server
+    /// </summary>
+    private string? Password { get; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SimpleChatAppClient"/> class.
     /// </summary>
     /// <param name="ip">The server IP to connect to, must be in the format: *protocol*://*ip*:*port*</param>
     /// <param name="name">The username to use when sending messages.</param>
     /// <param name="channel">The channel to send and receive messages to and from.</param>
-    public SimpleChatAppClient(string ip, string name, string channel) {
+    /// <param name="password">The password to use to connect to the server, null for no password.</param>
+    public SimpleChatAppClient(string ip, string name, string channel, string? password = null) {
         Name = name;
         Ip = ip;
         Channel = channel;
         TrustedUsers = new TrustedChatUsers(this);
         Prefs = new SimpleChatLibPrefs();
+        Password = password;
         
         // Load trusted users from file.
         List<KeyValuePair<string, string>>? trust = JsonSerializer.Deserialize<List<KeyValuePair<string, string>>>(
-            Prefs.GetString("trusted_users", "{}"));
+            Prefs.GetString("trusted_users", "[]"));
         if (trust == null) {
             throw new Exception("Invalid trusted users value in config");
         }
@@ -117,14 +125,13 @@ public class SimpleChatAppClient {
     public SimpleChatAppMessage SendMessage(string message) {
         DSACryptoServiceProvider MySigner = new DSACryptoServiceProvider();
         MySigner.FromXmlString(privateKey);
-        Console.WriteLine(publicKey);
         string resp = Requests.SendHttpRequest("POST", $"{Ip}/messages/{Channel}", new Dictionary<string, object> {
             { "text", message },
             { "creatorName", Name },
             { "publicKey", publicKey },
             { "signature", Convert.ToBase64String(MySigner.SignData(Encoding.UTF8.GetBytes(message))) }
-        });
-        return JsonSerializer.Deserialize<SimpleChatAppMessage>(resp);
+        }, Password);
+        return JsonSerializer.Deserialize<SimpleChatAppMessage>(resp)!;
     }
 
     /// <summary>
@@ -133,6 +140,7 @@ public class SimpleChatAppClient {
     /// <param name="amount">The number of messages to get.</param>
     /// <param name="offset">The amount to offset the messages by.
     /// For example a value of 5 would skip 5 messages and get the next amount that was specified.</param>
+    /// <param name="appearOnline">Whether or not to have the user appear in the online users list.</param>
     /// <returns>A list of the requested messages</returns>
     /// <exception cref="SimpleChatAppException">Will be thrown if the server responds with a null response.</exception>
     public IEnumerable<SimpleChatAppMessage> GetMessages(int amount = 10, int offset = 0, bool appearOnline = true) {
@@ -140,7 +148,7 @@ public class SimpleChatAppClient {
         if (appearOnline) {
           url += $"&name={Name}";
         }
-        string response = Requests.SendHttpRequest("GET", url);
+        string response = Requests.SendHttpRequest("GET", url, Password);
         SimpleChatAppMessage[]? messages = JsonSerializer.Deserialize<SimpleChatAppMessage[]>(response);
         if (messages == null) throw new SimpleChatAppException("Failed to get messages (null response)");
         return messages.Reverse();
@@ -152,7 +160,7 @@ public class SimpleChatAppClient {
     /// <returns>The requested list of users</returns>
     /// <exception cref="SimpleChatAppException">Will be thrown if the server responds with a null response.</exception>
     public IEnumerable<string> GetOnlineUsers() {
-      string response = Requests.SendHttpRequest("GET", $"{Ip}/messages/{Channel}/online");
+      string response = Requests.SendHttpRequest("GET", $"{Ip}/messages/{Channel}/online", Password);
       string[]? online = JsonSerializer.Deserialize<string[]>(response);
       if (online == null) throw new SimpleChatAppException("Failed to get online (null response)");
       return online;
